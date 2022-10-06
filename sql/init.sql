@@ -14,13 +14,13 @@ create table news(
 -- todo нужна ли?
 create table news_roles_map(
     uuid UUID REFERENCES news,
-    role_id int,
+    role_id text,
     PRIMARY KEY (uuid, role_id)
 );
 
 -- todo нужна ли?
 create table roles(
-    role_id int,
+    role_id text,
     role_desc text,
     role_embedding integer[]
     PRIMARY KEY (role_id)

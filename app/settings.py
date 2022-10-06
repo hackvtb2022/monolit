@@ -16,6 +16,13 @@ class Settings(BaseSettings):
             "host": self.POSTGRES_HOST,
         }
 
+    @property
+    def DB_SQLALCHEMY_DATABASE_URL(self):
+        return (
+            f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD.get_secret_value()}"
+            f"@{self.POSTGRES_HOST}/{self.POSTGRES_DB}"
+        )
+
 
 APP_SETTINGS = Settings()
 print(APP_SETTINGS.json(indent=4))
