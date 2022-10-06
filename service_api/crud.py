@@ -1,9 +1,8 @@
 from typing import List, Tuple
 
+from app.models import NewsModel, NewsScoreModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-
-from app.models import NewsModel, NewsScoreModel
 
 
 def get_news_score(db: Session, role_id: str) -> List[Tuple[NewsScoreModel, NewsModel]]:
@@ -25,7 +24,8 @@ def get_news_score(db: Session, role_id: str) -> List[Tuple[NewsScoreModel, News
     news_score = (
         db.query(NewsScoreModel, NewsModel)
         .filter(
-            NewsScoreModel.processed_dttm == max_dttm, NewsScoreModel.role_id == role_id
+            NewsScoreModel.processed_dttm == max_dttm.as_scalar(),
+            NewsScoreModel.role_id == role_id,
         )
         .join(NewsModel, NewsScoreModel.uuid == NewsModel.uuid)
         .all()

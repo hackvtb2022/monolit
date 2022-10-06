@@ -4,7 +4,7 @@
 ##### Зависимости:
 ```bash
 pip install -r requirements_aggregator.txt
-pip install -r requirements_app.txt
+pip install -r requirements_api.txt
 pip install -r requirements_scraper.txt
 ```
 

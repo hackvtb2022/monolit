@@ -7,14 +7,14 @@ services:
     - ./postgres_data:/var/lib/postgresql/data
     - ./sql/init.sql:/docker-entrypoint-initdb.d/1-schema.sql
     env_file: docker/.env
-  app:
+  api:
     build:
       context: .
-      dockerfile: docker/Dockerfile.app
+      dockerfile: docker/Dockerfile.api
     ports:
     - 8000:8000
     volumes:
-    - ./app:/app/app
+    - ./service_api:/app/app
     env_file: docker/.env
     depends_on:
     - db
@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.scraper
     volumes:
-    - ./app:/app/app
+    - ./service_scraper:/app/app
     env_file: docker/.env
     depends_on:
     - db
@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.aggregator
     volumes:
-    - ./app:/app/app
+    - ./service_aggregator:/app/app
     env_file: docker/.env
     depends_on:
     - db

@@ -1,7 +1,6 @@
 import psycopg2
-from psycopg2 import Error
-
 from app.settings import APP_SETTINGS
+from psycopg2 import Error
 
 
 def get_db():

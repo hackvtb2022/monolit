@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
 from app.api.schemas import NewsSchema, RoleNewsResponseSchema, RolesEnum
 from app.crud import get_news_score
 from app.dependencies import get_db
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 router_health = APIRouter(prefix="")
 router_main = APIRouter(prefix="/api/v1")
