@@ -95,6 +95,7 @@ parts/
 pip-delete-this-directory.txt
 pip-log.txt
 pip-wheel-metadata/
+postgres_data/
 profile_default/
 sdist/
 share/python-wheels/
