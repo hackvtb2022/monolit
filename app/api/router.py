@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.schemas import NewsSchema, RoleNewsResponseSchema, RolesEnum
+from app.crud import get_news_score
 from app.dependencies import get_db
-from app.models import NewsModel
 
 router_health = APIRouter(prefix="")
 router_main = APIRouter(prefix="/api/v1")
@@ -22,9 +22,16 @@ async def read_root():
 async def task_start(role_id: RolesEnum, db: Session = Depends(get_db)):
     role_id = role_id.value.lower().strip()
 
-    res = db.query(NewsModel).filter(NewsModel.title == "xxx").all()
-    print("res", res)
+    news_score = get_news_score(db, role_id)
+    if not news_score:
+        return RoleNewsResponseSchema(status=f"Not found news for role {role_id}")
 
-    return RoleNewsResponseSchema(
-        role_id=role_id, news=[NewsSchema(url="url", title="title")]
-    )
+    resp = RoleNewsResponseSchema(status="ok", role_id=role_id)
+    news = []
+    for score, news_raw in news_score:
+        news.append(
+            NewsSchema(url=news_raw.url, title=news_raw.title, score=score.score)
+        )
+    resp.news = news
+
+    return resp

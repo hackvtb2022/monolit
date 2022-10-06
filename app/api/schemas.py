@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -12,8 +12,10 @@ class RolesEnum(str, Enum):
 class NewsSchema(BaseModel):
     url: str
     title: str
+    score: float
 
 
 class RoleNewsResponseSchema(BaseModel):
-    role_id: RolesEnum
-    news: List[NewsSchema]
+    status: str
+    role_id: Optional[RolesEnum]
+    news: Optional[List[NewsSchema]]
