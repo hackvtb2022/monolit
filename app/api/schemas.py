@@ -17,5 +17,6 @@ class NewsSchema(BaseModel):
 
 class RoleNewsResponseSchema(BaseModel):
     status: str
+    message: Optional[str]
     role_id: Optional[RolesEnum]
     news: Optional[List[NewsSchema]]

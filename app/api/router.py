@@ -24,7 +24,9 @@ async def task_start(role_id: RolesEnum, db: Session = Depends(get_db)):
 
     news_score = get_news_score(db, role_id)
     if not news_score:
-        return RoleNewsResponseSchema(status=f"Not found news for role {role_id}")
+        return RoleNewsResponseSchema(
+            status=f"not found", message=f"Not found news for role `{role_id}`"
+        )
 
     resp = RoleNewsResponseSchema(status="ok", role_id=role_id)
     news = []

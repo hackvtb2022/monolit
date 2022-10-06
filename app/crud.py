@@ -28,8 +28,6 @@ def get_news_score(db: Session, role_id: str) -> List[Tuple[NewsScoreModel, News
             NewsScoreModel.processed_dttm == max_dttm, NewsScoreModel.role_id == role_id
         )
         .join(NewsModel, NewsScoreModel.uuid == NewsModel.uuid)
+        .all()
     )
-    print("NEWS", news_score)
-    news_score = news_score.all()
-
     return news_score

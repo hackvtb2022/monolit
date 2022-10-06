@@ -6,10 +6,7 @@ services:
     volumes:
     - ./postgres_data:/var/lib/postgresql/data
     - ./sql/init.sql:/docker-entrypoint-initdb.d/1-schema.sql
-    environment:
-      POSTGRES_DB: vtb
-      POSTGRES_USER: vtb
-      POSTGRES_PASSWORD: vtb
+    env_file: docker/.env
   app:
     build:
       context: .
@@ -18,12 +15,24 @@ services:
     - 8000:8000
     volumes:
     - ./app:/app/app
-    environment:
-      PYTHONPATH: /app
-      POSTGRES_HOST: db
-      POSTGRES_DB: vtb
-      POSTGRES_USER: vtb
-      POSTGRES_PASSWORD: vtb
+    env_file: docker/.env
     depends_on:
-    - db   # command: uvicorn app.main:app --host 0.0.0.0 --port 8000
-      #command: python app/hello.py
+    - db
+  scraper:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.scraper
+    volumes:
+    - ./app:/app/app
+    env_file: docker/.env
+    depends_on:
+    - db
+  aggregator:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.aggregator
+    volumes:
+    - ./app:/app/app
+    env_file: docker/.env
+    depends_on:
+    - db
