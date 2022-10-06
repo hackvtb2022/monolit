@@ -4,16 +4,25 @@
 #   install all needed dependencies.
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
+# Ansible SSH keys
 # Byte-compiled / optimized / DLL files
 # C extensions
 # Celery stuff
+# Configuration Pycharm
+# Configuration VS Code
 # Distribution / packaging
 # Django stuff:
+# Docker-compose.yml
 # Environments
+# Exclude files
 # Flask stuff:
+# Git files
+# Git folder
 # IPython
 # Installer logs
 # Jupyter Notebook
+# Local stuff
+# Old stuff
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 # PyBuilder
 # PyInstaller
@@ -21,16 +30,22 @@
 # Rope project settings
 # SageMath parsed files
 # Scrapy stuff:
+# Sonar
+# Source:
+# Spark folders
 # Sphinx documentation
 # Spyder project settings
 # Translations
 # Unit test / coverage reports
+# https://github.com/github/gitignore/blob/master/Python.gitignore
 # mkdocs documentation
 # mypy
 # pipenv
 # pyenv
 #Pipfile.lock
 *$py.class
+**/metastore_db
+**/spark_warehouse
 *.cover
 *.egg
 *.egg-info/
@@ -43,33 +58,49 @@
 *.sage.py
 *.so
 *.spec
+*docker-compose*
 .Python
 .cache
 .coverage
 .coverage.*
 .dmypy.json
 .eggs/
-.env
+.env*
+.git/
+.gitignore
+.gitlab-ci.yml
 .hypothesis/
+.idea/
 .installed.cfg
 .ipynb_checkpoints
+.local/
 .mypy_cache/
 .nox/
+.project/
+.pydevproject/
 .pyre/
 .pytest_cache/
 .python-version
 .ropeproject
+.run/
+.scannerwork
 .scrapy
+.settings/
 .spyderproject
 .spyproject
 .tox/
 .venv
+.vscode/
 .webassets-cache
 /site
+Dockerfile
 ENV/
+Jenkinsfile
 MANIFEST
 __pycache__/
 __pypackages__/
+ansible
+ansible/ssh*
 build/
 celerybeat-schedule
 celerybeat.pid
@@ -79,27 +110,40 @@ db.sqlite3-journal
 develop-eggs/
 dist/
 dmypy.json
+docker-compose-*.yml
+docker-compose.yml
+docs/*.tar.gz
 docs/_build/
+docs/build
 downloads/
 eggs/
 env.bak/
 env/
+example.*
 htmlcov/
 instance/
 ipython_config.py
-lib/
-lib64/
+kafka_2.13-3.2.0.tgz
+kafka_2.13-3.2.0/
+kafka_vol/
 local_settings.py
 nosetests.xml
 parts/
 pip-delete-this-directory.txt
 pip-log.txt
+pip-selfcheck.json
 pip-wheel-metadata/
 profile_default/
+reports/
 sdist/
 share/python-wheels/
+sonar*
 target/
+test_conf*
+tmp/
 var/
+ve/
 venv.bak/
 venv/
+virtualenv/
 wheels/

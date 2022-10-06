@@ -1,0 +1,7 @@
+fastapi
+pre-commit
+pydantic
+pytest
+requests
+sqlalchemy
+uvicorn
