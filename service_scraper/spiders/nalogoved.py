@@ -1,6 +1,8 @@
+import csv
+import json
 import locale
-import logging
 from datetime import datetime
+from pathlib import Path
 from random import randint
 from time import sleep
 from typing import List, Optional, Tuple
@@ -18,6 +20,7 @@ logger = get_stream_logger(logger_name=__name__)
 
 REQUESTS_TIMEOUT_SEC = 60
 SLEEP_SEC = 5
+BATCH_SAVE = 100
 
 
 class NalogovedScraper:
@@ -26,13 +29,17 @@ class NalogovedScraper:
 
     def __init__(
         self,
+        csv_path: Path,
+        batch_save: int = BATCH_SAVE,
         requests_timeout_sec: int = REQUESTS_TIMEOUT_SEC,
         sleep_sec: int = SLEEP_SEC,
     ) -> None:
-        self.session = requests.Session()
+        self.csv_path = csv_path
+        self.batch_save = batch_save
         self.requests_timeout_sec = requests_timeout_sec
         self.sleep_sec = sleep_sec
         self.failed_url = []
+        self.session = requests.Session()
 
     def _parse_main_page(self, soup: BeautifulSoup) -> Tuple[List[dict], str]:
         links = []
@@ -77,7 +84,12 @@ class NalogovedScraper:
             page = self.session.get(page, timeout=self.requests_timeout_sec)
             assert page.status_code == 200
             soup = BeautifulSoup(page.text, "html.parser")
-            return soup.find("div", class_="html").text.strip()
+            full_text = soup.find("div", class_="html").text
+            full_text = full_text.replace("\n", "")
+            full_text = full_text.replace("\t", "")
+            full_text = full_text.replace(";", "")
+            full_text = full_text.strip()
+            return full_text
         except requests.exceptions.Timeout as err:
             logger.error(f"Timeout err: {err}")
         except requests.exceptions.RequestException as err:
@@ -94,6 +106,18 @@ class NalogovedScraper:
             if min_post_dttm > link["post_dttm"]:
                 min_post_dttm = link["post_dttm"]
         return links, min_post_dttm
+
+    def _save_batch(self, links: List[dict], save_all: bool = False):
+        if self.batch_save <= len(links) or save_all:
+            logger.info(f"Save batch {len(links)}")
+            if links:
+                with open(self.csv_path, mode="a", encoding="utf8") as f:
+                    writer = csv.DictWriter(
+                        f, fieldnames=links[0].keys(), delimiter=";"
+                    )
+                    writer.writerows(links)
+            return []
+        return links
 
     def parse(
         self,
@@ -116,46 +140,49 @@ class NalogovedScraper:
         -------
         Список из новостей
         """
-        sleep(self.sleep_sec + randint(1, 5))
         page = start_page or self.base_url_news
-        links, next_page = self._get_page_urls(page)
-        if links:
-            links, min_post_dttm = self._get_news_text(links)
-        if next_page is None:
-            logger.error(f"None next_page for page {page}")
-            return links
+        total_news_parsed = 0
+        links = []
+        while True:
+            links_, next_page = self._get_page_urls(page)
+            total_news_parsed += len(links_)
+            links.extend(links_)
+            if links:
+                links, min_post_dttm = self._get_news_text(links)
+            if next_page is None:
+                logger.error(f"None next_page for page {page}")
+                return links
 
-        logger.info(
-            f"page {page} next_page {next_page} min_post_dttm {min_post_dttm} parse news {len(links)}"
-        )
-
-        if stop_post_dttm and stop_post_dttm >= min_post_dttm:
-            return links
-        if (
-            stop_page_num
-            and next_page
-            and int(next_page.split("=")[1]) >= stop_page_num + 1
-        ):
-            return links
-        links.extend(
-            self.parse(
-                start_page=next_page,
-                stop_post_dttm=stop_post_dttm,
-                stop_page_num=stop_page_num,
+            logger.info(
+                f"current page {page} next_page {next_page} min_post_dttm {min_post_dttm} parse news {len(links)} total parsed {total_news_parsed}"
             )
-        )
-        return links
+
+            if (stop_post_dttm and stop_post_dttm >= min_post_dttm) or (
+                stop_page_num
+                and next_page
+                and int(next_page.split("=")[1]) >= stop_page_num + 1
+            ):
+                self._save_batch(links, save_all=True)
+                return
+
+            links = self._save_batch(links)
+            page = next_page
+            sleep(self.sleep_sec + randint(1, 5))
 
 
 if __name__ == "__main__":
-    news = NalogovedScraper()
-    # res = news.parse(start_page="https://nalogoved.ru/news/?page=1", stop_page_num=1)
-    # logger.debug(f"Result {res[:2]}")
-    # logger.debug(f"Result len {len(res)}")
-
-    res = news.parse(
-        start_page="https://nalogoved.ru/news/?page=1",
-        stop_post_dttm=datetime.strptime("2022-09-26", "%Y-%m-%d"),
+    news = NalogovedScraper(
+        csv_path=Path("/Users/vgstrelnik/Desktop/projects/hakaton/nalogoved.csv"),
+        batch_save=30,
     )
-    logger.debug(f"Result {res[:2]}")
-    logger.debug(f"Result len {len(res)}")
+
+    news.parse(
+        start_page="https://nalogoved.ru/news/?page=1",
+        stop_page_num=1
+        # stop_page_num=120
+        # stop_post_dttm=datetime.strptime("2022-09-26", "%Y-%m-%d"),
+    )
+    with open(
+        "/Users/vgstrelnik/Desktop/projects/hakaton/nalogoved_failed.json", "w"
+    ) as f:
+        json.dump(news.failed_url, f)
