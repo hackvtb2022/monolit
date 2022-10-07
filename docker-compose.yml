@@ -36,3 +36,14 @@ services:
     env_file: docker/.env.local
     depends_on:
     - db
+  insights:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.insights
+    volumes:
+      - ./service_insights:/app/app
+    env_file: docker/.env.local
+    tty: true
+    command: "/bin/bash"
+    depends_on:
+    - db

@@ -1,0 +1,18 @@
+FROM python:3.9
+
+ENV APP_HOME=/app
+
+WORKDIR $APP_HOME
+
+RUN apt-get update
+
+COPY requirements_insights.txt .
+
+RUN pip install --no-cache-dir -r requirements_insights.txt
+
+RUN python -m spacy download ru_core_news_sm
+RUN python -m dostoevsky download fasttext-social-network-model
+
+ADD ./service_insights $APP_HOME/service_insights
+
+ENV PYTHONPATH=${PYTHONPATH}:$PWD
