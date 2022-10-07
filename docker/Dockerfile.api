@@ -7,7 +7,7 @@ WORKDIR $APP_HOME
 COPY requirements_api.txt .
 RUN pip install --no-cache-dir -r requirements_api.txt
 
-COPY ./service_api $APP_HOME/app
+COPY ./service_api $APP_HOME/service_api
 COPY ./service_api/static $APP_HOME/static
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
