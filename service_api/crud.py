@@ -1,8 +1,9 @@
 from typing import List, Tuple
 
-from app.models import NewsModel, NewsScoreModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+
+from service_api.models import NewsModel, NewsScoreModel
 
 
 def get_news_score(db: Session, role_id: str) -> List[Tuple[NewsScoreModel, NewsModel]]:

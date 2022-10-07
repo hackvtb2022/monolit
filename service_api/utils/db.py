@@ -1,6 +1,7 @@
 import psycopg2
-from app.settings import APP_SETTINGS
 from psycopg2 import Error
+
+from service_api.settings import APP_SETTINGS
 
 
 def get_db():
