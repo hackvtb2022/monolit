@@ -3,7 +3,6 @@ import logging
 import functools
 
 
-
 @functools.lru_cache(1)
 def load_word2norm():
     logging.info("Started loading word2norm")
