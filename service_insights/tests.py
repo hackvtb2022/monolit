@@ -27,7 +27,17 @@ def test_load_spacy_pipeline():
         PipelineResponse(items=[
             PipelineItemResponse(start=0, end=33)
         ])
-    )
+    ),
+    (
+        PipelineRequest(text="Что то"),
+        PipelineResponse(items=[])
+    ),
+    (
+        PipelineRequest(text="Просто. Очень круто!"),
+        PipelineResponse(items=[
+            PipelineItemResponse(start=8, end=20)
+        ])
+    ),
 ])
 def test_pipeline(pipeline_request: PipelineRequest, expected: PipelineResponse):
     pipeline = Pipeline()
