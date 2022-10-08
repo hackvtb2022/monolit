@@ -1,34 +1,44 @@
+from datetime import datetime
 from typing import List, Tuple
 
-from sqlalchemy import func
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
-from service_api.models import NewsModel, NewsScoreModel
+from service_api.models import NewsEmbModel, NewsModel, NewsRolesMapModel
 
 
-def get_news_score(db: Session, role_id: str) -> List[Tuple[NewsScoreModel, NewsModel]]:
-    """Поиск актуальных новостей для role_id
+def get_corpus(
+    db: Session, role_id: str, dttm_to: datetime
+) -> List[Tuple[NewsModel, NewsEmbModel]]:
+    """Поиск актуальных новостей для role_id не старше dttm_to
 
     Parameters
     ----------
     db : Session
         Подключение к базе данных
     role_id : str
-        Роль
+        Роль для поиска
+    dttm_to : datetime
+        До какой даты отбираем новости
 
     Returns
     -------
     Актуальные новости
     """
 
-    max_dttm = db.query(func.max(NewsScoreModel.processed_dttm))
-    news_score = (
-        db.query(NewsScoreModel, NewsModel)
-        .filter(
-            NewsScoreModel.processed_dttm == max_dttm.as_scalar(),
-            NewsScoreModel.role_id == role_id,
+    corpus = (
+        db.query(NewsModel, NewsEmbModel)
+        .select_from(NewsModel)
+        .join(
+            NewsEmbModel,
+            and_(NewsModel.uuid == NewsEmbModel.uuid, NewsModel.post_dttm >= dttm_to),
         )
-        .join(NewsModel, NewsScoreModel.uuid == NewsModel.uuid)
-        .all()
+        .join(
+            NewsRolesMapModel,
+            and_(
+                NewsModel.uuid == NewsRolesMapModel.uuid,
+                NewsRolesMapModel.role_id == role_id,
+            ),
+        )
     )
-    return news_score
+    return corpus.all()

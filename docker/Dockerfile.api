@@ -1,13 +1,20 @@
-FROM python:3.9-slim
+FROM python:3.9
 
 ENV APP_HOME=/app
 
 WORKDIR $APP_HOME
 
+RUN apt-get update
+
 COPY requirements_api.txt .
 RUN pip install --no-cache-dir -r requirements_api.txt
 
-COPY ./service_api $APP_HOME/service_api
-COPY ./service_api/static $APP_HOME/static
+RUN python -m spacy download ru_core_news_sm
+RUN python -m dostoevsky download fasttext-social-network-model
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY ./service_api/static $APP_HOME/static
+COPY ./service_aggregator $APP_HOME/service_aggregator
+COPY ./service_insights $APP_HOME/service_insights
+COPY ./service_api $APP_HOME/service_api
+
+CMD ["uvicorn", "service_api.main:app", "--host", "0.0.0.0", "--port", "8000"]

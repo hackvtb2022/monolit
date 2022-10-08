@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -99,7 +99,7 @@ def get_news_score(
 
 def get_topK_news(
     cluster: pd.DataFrame,
-    K: int = 3,
+    K: Optional[int] = 3,
     date_col: str = "date",
     embedding_col: str = "embedding",
 ) -> List[int]:
@@ -120,5 +120,7 @@ def get_topK_news(
         List[int]: _description_
     """
     scores = get_news_score(cluster, date_col=date_col, embedding_col=embedding_col)
-    top_K_news = scores.sort_values(ascending=False)[:K]
+    top_K_news = scores.sort_values(ascending=False)
+    if K:
+        top_K_news = top_K_news.iloc[:K]
     return top_K_news.index

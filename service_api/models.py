@@ -1,4 +1,5 @@
 from sqlalchemy import ARRAY, TIMESTAMP, Column, Float, String
+from sqlalchemy.ext.mutable import MutableList
 
 from service_api.database import Base
 
@@ -11,16 +12,28 @@ class NewsModel(Base):
     title = Column(String)
     post_dttm = Column(TIMESTAMP)
     url = Column(String, unique=True)
-    role_ids = ARRAY(String)
-    embedding_full_text = ARRAY(Float)
-    embedding_title = ARRAY(Float)
+    text_links = Column(String, unique=True)
     processed_dttm = Column(TIMESTAMP)
 
 
-class NewsScoreModel(Base):
-    __tablename__ = "news_score"
+class NewsEmbModel(Base):
+    __tablename__ = "news_emb"
+
+    uuid = Column(String, primary_key=True)
+    embedding_full_text = Column(MutableList.as_mutable(ARRAY(Float)))
+    embedding_title = Column(MutableList.as_mutable(ARRAY(Float)))
+
+
+class NewsRolesMapModel(Base):
+    __tablename__ = "news_roles_map"
 
     uuid = Column(String, primary_key=True)
     role_id = Column(String, primary_key=True)
-    score = Column(Float)
-    processed_dttm = Column(TIMESTAMP, primary_key=True)
+
+
+class RolesModel(Base):
+    __tablename__ = "roles"
+
+    role_id = Column(String, primary_key=True)
+    role_desc = Column(MutableList.as_mutable(ARRAY(String)))
+    role_embedding = Column(MutableList.as_mutable(ARRAY(Float)))

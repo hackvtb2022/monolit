@@ -7,3 +7,4 @@ from service_aggregator.embedder import (
     get_embeddings_text,
     tokenizer,
 )
+from service_aggregator.pipeline import run_pipeline

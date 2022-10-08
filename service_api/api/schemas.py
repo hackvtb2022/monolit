@@ -1,22 +1,46 @@
+from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel
 
 
-class RolesEnum(str, Enum):
-    role_id_1 = "сантехник"
-    role_id_2 = "прогер"
+class PeriodEnum(str, Enum):
+    month = "month"
+    week = "week"
+    day = "day"
+
+
+class InsigtsItemResponse(BaseModel):
+    start: int
+    end: int
+
+
+class InsigtsItemTextResponse(BaseModel):
+    text: str
+
+
+class InsigtsResponse(BaseModel):
+    items: List[InsigtsItemResponse]
+    items_text: List[InsigtsItemTextResponse]
 
 
 class NewsSchema(BaseModel):
-    url: str
     title: str
-    score: float
+    post_dttm: datetime
+    url: str
+    full_text: str
+    insights: InsigtsResponse
+
+
+class NewsClusterSchema(BaseModel):
+    trand_id: int
+    trand_title: str
+    news: List[NewsSchema]
 
 
 class RoleNewsResponseSchema(BaseModel):
     status: str
     message: Optional[str]
-    role_id: Optional[RolesEnum]
-    news: Optional[List[NewsSchema]]
+    role_id: Optional[str]
+    trands: Optional[List[NewsClusterSchema]]

@@ -13,6 +13,7 @@ from fastapi.openapi.docs import (
 from starlette.staticfiles import StaticFiles
 
 from service_api.api.router import router_health, router_main
+from service_api.containers import Container
 
 app = FastAPI(
     title="API новостного агрегатора",
@@ -54,6 +55,10 @@ async def redoc_html():
         redoc_js_url="/static/redoc.standalone.js",
     )
 
+
+container = Container()
+container.insights()
+app.container = container
 
 static_path = Path(__file__).parent.parent / "static"
 app.mount("/static", StaticFiles(directory=static_path), name="static")
