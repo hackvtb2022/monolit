@@ -37,13 +37,11 @@ services:
     depends_on:
     - db
   insights:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.insights
+    image: vladislavkruglikov/insights:master
     volumes:
       - ./service_insights:/app/app
     env_file: docker/.env.local
     tty: true
     command: "/bin/bash"
     depends_on:
-    - db
+      - db
