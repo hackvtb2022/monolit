@@ -3,13 +3,16 @@ fastapi
 
 fasttext
 numpy
+pandas
 pre-commit
 psycopg2-binary
 pydantic
 pyonmttok
 pytest
 requests
+scikit-learn
 sqlalchemy
 sqlalchemy
+torch
 torch
 uvicorn
