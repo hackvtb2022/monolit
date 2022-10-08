@@ -4,7 +4,6 @@ import logging
 import sys
 from pathlib import Path
 
-from app.api.router import router_health, router_main
 from fastapi import FastAPI
 from fastapi.openapi.docs import (
     get_redoc_html,
@@ -12,6 +11,8 @@ from fastapi.openapi.docs import (
     get_swagger_ui_oauth2_redirect_html,
 )
 from starlette.staticfiles import StaticFiles
+
+from service_api.api.router import router_health, router_main
 
 app = FastAPI(
     title="API новостного агрегатора",

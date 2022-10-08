@@ -1,5 +1,6 @@
-from app.database import SessionLocal
 from sqlalchemy.orm import Session
+
+from service_api.database import SessionLocal
 
 
 class SessionManager:

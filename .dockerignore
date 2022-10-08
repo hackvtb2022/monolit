@@ -133,11 +133,13 @@ pip-delete-this-directory.txt
 pip-log.txt
 pip-selfcheck.json
 pip-wheel-metadata/
+postgres_data/
 profile_default/
 reports/
 sdist/
 share/python-wheels/
 sonar*
+sql/
 target/
 test_conf*
 tmp/

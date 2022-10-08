@@ -1,5 +1,6 @@
-from app.database import Base
 from sqlalchemy import ARRAY, TIMESTAMP, Column, Float, String
+
+from service_api.database import Base
 
 
 class NewsModel(Base):
