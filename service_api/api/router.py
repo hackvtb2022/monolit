@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
@@ -7,11 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from service_aggregator import run_pipeline
-from service_api.api.schemas import (
-    NewsClusterSchema,
-    PeriodEnum,
-    RoleNewsResponseSchema,
-)
+from service_api.api.schemas import PeriodEnum, RoleNewsResponseSchema, RolesEnum
 from service_api.containers import Container
 from service_api.crud import get_corpus
 from service_api.dependencies import get_db
@@ -96,7 +92,7 @@ def get_last_dttm(period: PeriodEnum) -> datetime:
 )
 @inject
 async def get_trands(
-    role_id: str,
+    role_id: RolesEnum,
     period: PeriodEnum = PeriodEnum.month,
     num_trands: Optional[int] = Query(default=3, title="Кол-во трендов", gt=0, le=20),
     num_trand_news: Optional[int] = Query(
@@ -118,7 +114,7 @@ async def get_trands(
 
     Возможно конфигурировать:
     - role_id - роль, для которой выгружаются новости
-    - period - период, за который выгружаются новости: 'quarter', 'month', 'week', 'day'
+    - period - период, за который выгружаются новости
     - num_trands - кол-во трендов
     - num_trand_news - кол-во новостей в тренде
         Если не передан, выгруажем все доступные новости тренда
@@ -127,7 +123,7 @@ async def get_trands(
     """
 
     last_dttm = get_last_dttm(period)
-    role_id = role_id.strip().lower()
+    role_id = role_id.value
     corpus = get_corpus(db, role_id, last_dttm)
     if not corpus:
         return RoleNewsResponseSchema(

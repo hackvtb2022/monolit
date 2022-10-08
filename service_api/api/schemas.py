@@ -2,7 +2,14 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+
+class RolesEnum(str, Enum):
+    """Роли для выгрузки новостей"""
+
+    accountant = "бухгалтер"
+    general_manager = "ген_директор"
 
 
 class PeriodEnum(str, Enum):
@@ -15,11 +22,15 @@ class PeriodEnum(str, Enum):
 
 
 class Sentiment(str, Enum):
+    """Значения сентимента"""
+
     positive = "positive"
     negative = "negative"
 
 
 class InsigtsItemResponse(BaseModel):
+    """Структура инсайта"""
+
     start: int
     end: int
     start: int
@@ -30,10 +41,14 @@ class InsigtsItemResponse(BaseModel):
 
 
 class InsigtsResponse(BaseModel):
+    """Структура инсайтов"""
+
     items: List[InsigtsItemResponse]
 
 
 class NewsSchema(BaseModel):
+    """Структура новости"""
+
     title: str
     post_dttm: datetime
     url: str
@@ -41,15 +56,19 @@ class NewsSchema(BaseModel):
     insights: InsigtsResponse
 
 
-class NewsClusterSchema(BaseModel):
+class NewsTrandsSchema(BaseModel):
+    """Структура тренда"""
+
     trand_id: int
     trand_title: str
     news: List[NewsSchema]
 
 
 class RoleNewsResponseSchema(BaseModel):
+    """Структура ответа API по запросу трендов"""
+
     status: str
     message: Optional[str]
     role_id: Optional[str]
     period: Optional[PeriodEnum]
-    trands: Optional[List[NewsClusterSchema]]
+    trands: Optional[List[NewsTrandsSchema]]
