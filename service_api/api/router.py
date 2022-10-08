@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from service_aggregator import run_pipeline
 from service_api.api.schemas import (
     NewsClusterSchema,
-    NewsSchema,
     PeriodEnum,
     RoleNewsResponseSchema,
 )
@@ -42,6 +41,15 @@ async def read_root():
 def prepare_corpus(
     corpus: List[Tuple[NewsModel, NewsEmbModel]], cols: List[str] = None
 ) -> pd.DataFrame:
+    """Преобразование корпуса тексто из orm моделей в pandas DF
+
+    Args:
+        corpus (List[Tuple[NewsModel, NewsEmbModel]]): корпус текстов из БД
+        cols (List[str]): Столбцы, с которыми вернем DF
+
+    Returns:
+        pd.DataFrame: Корпусов новостей
+    """
     cols = cols or CORPUS_COLS
     corpus_sel_col = []
     for news, news_emb in corpus:
@@ -59,21 +67,21 @@ def prepare_corpus(
 
 
 @router_main.get(
-    "/trands1/{role_id}",
+    "/trands/{role_id}",
     response_model=RoleNewsResponseSchema,
 )
 @inject
 async def task_start(
     role_id: str,
     period: PeriodEnum = PeriodEnum.month,
-    k_trands: Optional[int] = Query(default=3, title="Кол-во трендов", gt=0, le=20),
-    k_trand_news: Optional[int] = Query(
+    num_trands: Optional[int] = Query(default=3, title="Кол-во трендов", gt=0, le=20),
+    num_trand_news: Optional[int] = Query(
         default=3,
         title="Кол-во новостей в тренде. Если не указано, вернет все доступные",
         gt=0,
         le=20,
     ),
-    k_trand_news_insights: Optional[int] = Query(
+    num_trand_news_insights: Optional[int] = Query(
         default=10,
         title="Кол-во инсайдов из новости тренда. Если не указано, вернет все.",
         gt=0,
@@ -82,6 +90,17 @@ async def task_start(
     insights: Pipeline = Depends(Provide[Container.insights]),
     db: Session = Depends(get_db),
 ):
+    """Выгрузка актуальный новостей.
+
+    Возможно конфигурировать:
+    - role_id - роль, для которой выгружаются новости
+    - period - период, за который выгружаются новости: 'month', 'week', 'day'
+    - num_trands - кол-во трендов
+    - num_trand_news - кол-во новостей в тренде
+        Если не передан, выгруажем все доступные новости тренда
+    - num_trand_news_insights - кол-во инсайтов в новости тренда
+        Если не передан, выгруажем все доступные инсайты новости тренда
+    """
     if period == PeriodEnum.month:
         last_dttm = (datetime.now() - timedelta(weeks=4)).replace(
             hour=0, minute=0, second=0, microsecond=0
@@ -110,8 +129,8 @@ async def task_start(
     corpus = prepare_corpus(corpus)
     clustered_corpus = run_pipeline(
         corpus=corpus,
-        clusters=k_trands,
-        cluster_top_news=k_trand_news,
+        clusters=num_trands,
+        cluster_top_news=num_trand_news,
         embedding_col="embedding_full_text",
         date_col="post_dttm",
     )
@@ -120,10 +139,10 @@ async def task_start(
         for news in trand_news:
             insights_request = PipelineRequest(text=news["full_text"])
             insights_vals = insights.run(insights_request)
-            if k_trand_news_insights:
+            if num_trand_news_insights:
                 insights_vals.items = sorted(
                     insights_vals.items, key=lambda x: -x.score
-                )[:k_trand_news_insights]
+                )[:num_trand_news_insights]
             news["insights"] = insights_vals
 
     return RoleNewsResponseSchema.parse_obj(

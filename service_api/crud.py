@@ -12,18 +12,13 @@ def get_corpus(
 ) -> List[Tuple[NewsModel, NewsEmbModel]]:
     """Поиск актуальных новостей для role_id не старше dttm_to
 
-    Parameters
-    ----------
-    db : Session
-        Подключение к базе данных
-    role_id : str
-        Роль для поиска
-    dttm_to : datetime
-        До какой даты отбираем новости
+    Args:
+        db (Session): Подключение к базе данных
+        role_id (str): Роль для поиска
+        dttm_to (datetime): До какой даты отбираем новости (включая)
 
-    Returns
-    -------
-    Актуальные новости
+    Returns:
+        List[Tuple[NewsModel, NewsEmbModel]]: Корпусов новостей
     """
 
     corpus = (

@@ -4,32 +4,29 @@ create table news(
     title text NOT NULL,
     post_dttm timestamp,
     url text NOT NULL UNIQUE,
-    role_ids text[] NOT NULL,
-    embedding_full_text real[] NOT NULL,
-    embedding_title real[] NOT NULL,
+    text_links text,
     processed_dttm timestamp,
     PRIMARY KEY (uuid)
 );
+CREATE INDEX ix_news_processed_dttm ON news (processed_dttm);
 
-create table news_score(
+
+create table news_emb(
     uuid text,
-    role_id text,
-    score real,
-    processed_dttm timestamp,
-    PRIMARY KEY (uuid, role_id, processed_dttm)
+    embedding_full_text real[] NOT NULL,
+    embedding_title real[] NOT NULL,
+    PRIMARY KEY (uuid)
 );
-CREATE INDEX ix_news_score_uuid ON news_score USING HASH (uuid);
-CREATE INDEX ix_news_score_uuid_role_id ON news_score (uuid, role_id);
-CREATE INDEX ix_news_dttm ON news_score (processed_dttm);
 
--- todo нужна ли?
+
 create table news_roles_map(
     uuid text,
     role_id text,
     PRIMARY KEY (uuid, role_id)
 );
+CREATE INDEX ix_news_roles_map_role_id ON news_roles_map USING HASH (role_id);
 
--- todo нужна ли?
+
 create table roles(
     role_id text,
     role_desc text,
