@@ -1,6 +1,6 @@
-from service_streamlit.display_trend import display_trend
-from service_streamlit.display_trends import display_trends
-from service_streamlit.utils import hide_streamlit, download_data, Period
+from display_trend import display_trend
+from display_trends import display_trends
+from utils import hide_streamlit, download_data, Period
 
 import streamlit as st
 
