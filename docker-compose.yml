@@ -45,3 +45,14 @@ services:
     command: "/bin/bash"
     depends_on:
       - db
+  filterer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.filterer
+    volumes:
+      - ./service_filterer:/app/app
+    env_file: docker/.env.local
+    tty: true
+    command: "/bin/bash"
+    depends_on:
+      - db
