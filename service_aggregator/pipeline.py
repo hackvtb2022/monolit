@@ -40,7 +40,7 @@ def run_pipeline(
         clustered_corpus.append(
             {
                 "trand_id": cluster,
-                "trand_title": news_top.loc[min(news_index), "title"],
+                "trand_title": news_top.loc[news_index[0], "title"],
                 "news": news_top.to_dict(orient="records"),
             }
         )
