@@ -1,7 +1,13 @@
 from doctest import Example
 from typing import List
+from enum import Enum
 
 from pydantic import BaseModel, Field
+
+
+class Sentiment(str, Enum):
+    positive = "positive"
+    negative = "negative"
 
 
 class PipelineRequest(BaseModel):
@@ -17,6 +23,10 @@ class PipelineItemResponse(BaseModel):
         description="Last index of the insight that is not included",
         example=5,
     )
+    sentiment: Sentiment = Field(default=...,
+                                 description="Most probable sentiment between positive and negative",
+                                 example=Sentiment.positive)
+    score: float = Field(default=..., description="Score of the sentiment", example=0.94)
 
 
 class PipelineItemTextResponse(BaseModel):
@@ -30,8 +40,8 @@ class PipelineResponse(BaseModel):
         default=...,
         description="List of start and end indices of the insights",
         example=[
-            PipelineItemResponse(start=0, end=9),
-            PipelineItemResponse(start=56, end=98),
+            PipelineItemResponse(start=0, end=9, sentiment=Sentiment.positive, score=0.54),
+            PipelineItemResponse(start=56, end=98, sentiment=Sentiment.negative, score=0.9),
         ],
     )
     items_text: List[PipelineItemTextResponse] = Field(

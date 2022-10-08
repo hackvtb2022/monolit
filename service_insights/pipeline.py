@@ -6,6 +6,7 @@ from service_insights.models import (
     PipelineItemTextResponse,
     PipelineRequest,
     PipelineResponse,
+    Sentiment
 )
 from service_insights.settings import Settings
 
@@ -21,27 +22,21 @@ class Pipeline:
         items_text: List[PipelineItemTextResponse] = []
         for sentence in self.spacy_model(request.text).sents:
             prediction = self.sentiment_model.predict([sentence.text], k=10)[0]
-            if prediction["positive"] >= self.settings.positive_sentiment_threshold:
-                items.append(
-                    PipelineItemResponse(
-                        start=sentence.start_char, end=sentence.end_char
-                    )
+            if prediction["positive"] >= prediction["negative"]:
+                score = prediction["positive"]
+                sentiment = Sentiment.positive
+            else:
+                score = prediction["negative"]
+                sentiment = Sentiment.negative
+            items.append(
+                PipelineItemResponse(
+                    start=sentence.start_char, end=sentence.end_char,
+                    score=score, sentiment=sentiment
                 )
-                items_text.append(
-                    PipelineItemTextResponse(
-                        text=request.text[sentence.start_char : sentence.end_char]
-                    )
+            )
+            items_text.append(
+                PipelineItemTextResponse(
+                    text=request.text[sentence.start_char: sentence.end_char]
                 )
-            elif prediction["negative"] >= self.settings.negative_sentiment_threshold:
-                items.append(
-                    PipelineItemResponse(
-                        start=sentence.start_char, end=sentence.end_char
-                    )
-                )
-                items_text.append(
-                    PipelineItemTextResponse(
-                        text=request.text[sentence.start_char : sentence.end_char]
-                    )
-                )
-
+            )
         return PipelineResponse(items=items, items_text=items_text)
