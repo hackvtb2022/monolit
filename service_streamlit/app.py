@@ -13,7 +13,7 @@ selected_period = query_params.get("period", ["week"])[0]
 
 def main():
     accountant_data = download_data(role_name="Бухгалтер", period=Period(selected_period), num_trands=3, num_trand_news=3, num_trand_news_insights=1)
-    ceo_data = download_data(role_name="Генеральный Директор", period=Period(selected_period), num_trands=3, num_trand_news=5, num_trand_news_insights=2)
+    ceo_data = download_data(role_name="Генеральный Директор", period=Period(selected_period), num_trands=3, num_trand_news=3, num_trand_news_insights=2)
     st.markdown(f"<div>"
                 f"<a target='_self' style='color: white; text-decoration: none; font-size: 18px; font-weight: 500; padding: 0px; margin: 0px; margin-right: 10px' href='?period=day'>Day</a>"
                 f"<a target='_self' style='color: white; text-decoration: none; font-size: 18px; font-weight: 500; padding: 0px; margin: 0px; margin-right: 10px' href='?period=week'>Week</a>"

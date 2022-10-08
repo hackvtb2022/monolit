@@ -15,7 +15,7 @@ def display_trend(data: Dict, trend: str):
         date_object = datetime.strptime(item["post_dttm"], '%Y-%m-%dT%H:%M:%S').date()
         st.write(date_object)
         st.markdown(
-            f"<p style='color: rgba(250, 250, 250, 1.0); font-size: 18px'>{item['title']}</p>",
+            f"<p style='color: rgba(250, 250, 250, 1.0); font-size: 18px'>{item['title']} <a href={item['url']}>источник</a></p>",
             unsafe_allow_html=True
         )
         insights = item["insights"]["items"]
