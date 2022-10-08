@@ -4,7 +4,7 @@ from display_trend import display_trend
 from display_trends import display_trends
 
 query_params = st.experimental_get_query_params()
-selected_role = query_params.get("role", ["Accountant"])[0]
+selected_role = query_params.get("role", ["Trends"])[0]
 selected_trend = query_params.get("trend", ["Trends"])[0]
 
 
