@@ -12,6 +12,10 @@
 
 ##### Локальный запуск API
 
+Необходимо скачать и бинарный файл обученных эмбеддингов на новостях - https://drive.google.com/u/0/uc?id=11K3T8uHspn7nK21m3be5hM6hYKl5igPC&export=download и положить его по пути `monolit/service_aggregator/models/ru_vectors_v3.bin`
+
+Запуск сервиса API:
+
 ```bash
 docker compose up -d api
 ```
@@ -20,6 +24,12 @@ docker compose up -d api
 - API доступно локально по адресу: `http://localhost:8000`
 - Swagger: `http://localhost:8000/docs`
 - Endpoint, реализующий поиск новостей: `http://localhost:8000/api/v1/trands/`
+
+Запуск пауков todo:
+```bash
+docker compose up -d api
+```
+
 
 ##### Зависимости:
 ```bash
