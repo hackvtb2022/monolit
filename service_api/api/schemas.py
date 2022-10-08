@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 class PeriodEnum(str, Enum):
     """Период для выгрузки новостей"""
 
+    quarter = "quarter"
     month = "month"
     week = "week"
     day = "day"
@@ -50,4 +51,5 @@ class RoleNewsResponseSchema(BaseModel):
     status: str
     message: Optional[str]
     role_id: Optional[str]
+    period: Optional[PeriodEnum]
     trands: Optional[List[NewsClusterSchema]]

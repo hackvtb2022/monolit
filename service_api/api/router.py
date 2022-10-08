@@ -66,12 +66,36 @@ def prepare_corpus(
     return pd.DataFrame(corpus_sel_col, columns=cols)
 
 
+def get_last_dttm(period: PeriodEnum) -> datetime:
+    if period == PeriodEnum.quarter:
+        return (datetime.now() - timedelta(weeks=4 * 3)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+    elif period == PeriodEnum.month:
+        return (datetime.now() - timedelta(weeks=4)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+    elif period == PeriodEnum.week:
+        return (datetime.now() - timedelta(weeks=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+    elif period == PeriodEnum.day:
+        return (datetime.now() - timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Unknown period type {period}",
+        )
+
+
 @router_main.get(
     "/trands/{role_id}",
     response_model=RoleNewsResponseSchema,
 )
 @inject
-async def task_start(
+async def get_trands(
     role_id: str,
     period: PeriodEnum = PeriodEnum.month,
     num_trands: Optional[int] = Query(default=3, title="Кол-во трендов", gt=0, le=20),
@@ -94,31 +118,15 @@ async def task_start(
 
     Возможно конфигурировать:
     - role_id - роль, для которой выгружаются новости
-    - period - период, за который выгружаются новости: 'month', 'week', 'day'
+    - period - период, за который выгружаются новости: 'quarter', 'month', 'week', 'day'
     - num_trands - кол-во трендов
     - num_trand_news - кол-во новостей в тренде
         Если не передан, выгруажем все доступные новости тренда
     - num_trand_news_insights - кол-во инсайтов в новости тренда
-        Если не передан, выгруажем все доступные инсайты новости тренда
+        сли не передан, выгруажем все доступные инсайты новости тренда
     """
-    if period == PeriodEnum.month:
-        last_dttm = (datetime.now() - timedelta(weeks=4)).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-    elif period == PeriodEnum.week:
-        last_dttm = (datetime.now() - timedelta(weeks=1)).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-    elif period == PeriodEnum.day:
-        last_dttm = (datetime.now() - timedelta(days=1)).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Unknown period type {period}",
-        )
 
+    last_dttm = get_last_dttm(period)
     role_id = role_id.strip()
     corpus = get_corpus(db, role_id, last_dttm)
     if not corpus:
@@ -139,12 +147,16 @@ async def task_start(
         for news in trand_news:
             insights_request = PipelineRequest(text=news["full_text"])
             insights_vals = insights.run(insights_request)
+            insights_vals.items = sorted(insights_vals.items, key=lambda x: -x.score)
             if num_trand_news_insights:
-                insights_vals.items = sorted(
-                    insights_vals.items, key=lambda x: -x.score
-                )[:num_trand_news_insights]
+                insights_vals.items = insights_vals.items[:num_trand_news_insights]
             news["insights"] = insights_vals
 
     return RoleNewsResponseSchema.parse_obj(
-        {"status": "ok", "role_id": role_id, "trands": clustered_corpus}
+        {
+            "status": "ok",
+            "role_id": role_id,
+            "period": period,
+            "trands": clustered_corpus,
+        }
     )
