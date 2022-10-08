@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from service_aggregator import run_pipeline
@@ -17,7 +17,7 @@ from service_api.containers import Container
 from service_api.crud import get_corpus
 from service_api.dependencies import get_db
 from service_api.models import NewsEmbModel, NewsModel
-from service_insights.models import PipelineItemResponse, PipelineRequest
+from service_insights.models import PipelineRequest
 from service_insights.pipeline import Pipeline
 
 router_health = APIRouter(prefix="")
@@ -59,15 +59,26 @@ def prepare_corpus(
 
 
 @router_main.get(
-    "/trands/{role_id}",
+    "/trands1/{role_id}",
     response_model=RoleNewsResponseSchema,
 )
 @inject
 async def task_start(
     role_id: str,
     period: PeriodEnum = PeriodEnum.month,
-    k_trands: int = 3,
-    k_trand_news: Optional[int] = None,
+    k_trands: Optional[int] = Query(default=3, title="Кол-во трендов", gt=0, le=20),
+    k_trand_news: Optional[int] = Query(
+        default=3,
+        title="Кол-во новостей в тренде. Если не указано, вернет все доступные",
+        gt=0,
+        le=20,
+    ),
+    k_trand_news_insights: Optional[int] = Query(
+        default=10,
+        title="Кол-во инсайдов из новости тренда. Если не указано, вернет все.",
+        gt=0,
+        le=20,
+    ),
     insights: Pipeline = Depends(Provide[Container.insights]),
     db: Session = Depends(get_db),
 ):
@@ -87,16 +98,6 @@ async def task_start(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Unknown period type {period}",
-        )
-    if k_trands < 1 or k_trands > 20:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"k_trands should be in range: 1 <= k_trands <= 20",
-        )
-    if k_trand_news and k_trand_news < 1 or k_trand_news > 20:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"k_trand_news should be in range: 1 <= k_trand_news <= 20",
         )
 
     role_id = role_id.strip()
@@ -118,7 +119,12 @@ async def task_start(
         trand_news = trand["news"]
         for news in trand_news:
             insights_request = PipelineRequest(text=news["full_text"])
-            news["insights"] = insights.run(insights_request)
+            insights_vals = insights.run(insights_request)
+            if k_trand_news_insights:
+                insights_vals.items = sorted(
+                    insights_vals.items, key=lambda x: -x.score
+                )[:k_trand_news_insights]
+            news["insights"] = insights_vals
 
     return RoleNewsResponseSchema.parse_obj(
         {"status": "ok", "role_id": role_id, "trands": clustered_corpus}

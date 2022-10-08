@@ -2,27 +2,34 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PeriodEnum(str, Enum):
+    """Период для выгрузки новостей"""
+
     month = "month"
     week = "week"
     day = "day"
 
 
+class Sentiment(str, Enum):
+    positive = "positive"
+    negative = "negative"
+
+
 class InsigtsItemResponse(BaseModel):
     start: int
     end: int
-
-
-class InsigtsItemTextResponse(BaseModel):
+    start: int
+    end: int
+    sentiment: Sentiment
+    score: float
     text: str
 
 
 class InsigtsResponse(BaseModel):
     items: List[InsigtsItemResponse]
-    items_text: List[InsigtsItemTextResponse]
 
 
 class NewsSchema(BaseModel):
