@@ -127,7 +127,7 @@ async def get_trands(
     """
 
     last_dttm = get_last_dttm(period)
-    role_id = role_id.strip()
+    role_id = role_id.strip().lower()
     corpus = get_corpus(db, role_id, last_dttm)
     if not corpus:
         return RoleNewsResponseSchema(
