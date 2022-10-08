@@ -49,7 +49,6 @@ class AuditItScraper:
         ):
             for row in news_block.findAll("li"):
                 title = row.find("a").text.strip()
-                print(post_dt, title)
                 if (
                     "новости недели" in title
                     or "наиболее важные новости недели" in title.lower()
@@ -92,7 +91,6 @@ class AuditItScraper:
         return []
 
     def _parse_news_page(self, page) -> Tuple[Optional[str], Optional[str]]:
-        page_raw = page
         try:
             page = self.session.get(
                 page, timeout=self.requests_timeout_sec, headers=self.headers
@@ -192,7 +190,7 @@ class AuditItScraper:
 if __name__ == "__main__":
     news = AuditItScraper(
         csv_path=Path("/Users/vgstrelnik/Desktop/projects/hakaton/audit_it.csv"),
-        batch_save=100,
+        batch_save=10,
         sleep_sec=10,
     )
 
