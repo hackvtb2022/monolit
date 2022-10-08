@@ -49,10 +49,10 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.filterer
+    ports:
+    - 8001:8000
     volumes:
       - ./service_filterer:/app/app
     env_file: docker/.env.local
-    tty: true
-    command: "/bin/bash"
     depends_on:
       - db

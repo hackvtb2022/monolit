@@ -10,6 +10,9 @@ COPY requirements_filterer.txt .
 
 RUN pip install --no-cache-dir -r requirements_filterer.txt
 
-ADD ./service_insights $APP_HOME/requirements_filterer
+ADD ./resources $APP_HOME/resources
+ADD ./service_filterer $APP_HOME/service_filterer
 
 ENV PYTHONPATH=${PYTHONPATH}:$PWD
+
+CMD ["uvicorn", "service_filterer.main:app", "--host", "0.0.0.0", "--port", "8000"]
