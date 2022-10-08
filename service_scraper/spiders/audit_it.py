@@ -17,9 +17,10 @@ from service_scraper.utils import get_stream_logger
 logger = get_stream_logger(logger_name=__name__)
 
 
-class NalogovedScraper:
-    base_url = "https://nalogoved.ru"
-    base_url_news = "https://nalogoved.ru/news/"
+class AuditItScraper:
+    base_url = "https://www.audit-it.ru"
+    base_url_news = "https://www.audit-it.ru/news/account"
+    news_pages_tpl = "https://www.audit-it.ru/news/account/{}/"
 
     def __init__(
         self,
@@ -33,58 +34,72 @@ class NalogovedScraper:
         self.batch_save = batch_save
         self.requests_timeout_sec = requests_timeout_sec
         self.sleep_sec = sleep_sec
-        self.headers = headers
+        self.headers = headers or APP_SETTINGS.HEADERS
         self.failed_url = []
         self.session = requests.Session()
 
-    def _parse_main_page(self, soup: BeautifulSoup) -> Tuple[List[dict], str]:
+    def _parse_main_page(self, soup: BeautifulSoup) -> List[dict]:
         links = []
-        for row in soup.findAll("div", class_="news-list"):
-            link = row.find("a")
-            if link is not None:
-                post_dttm = row.find("span").text.strip()
+        dates = [
+            datetime.strptime(post_dttm.text.strip(), "%d %B %Y")
+            for post_dttm in soup.findAll("span", class_="date-news")
+        ]
+        for post_dt, news_block in zip(
+            dates, soup.findAll("ul", class_="type-first info-box")
+        ):
+            for row in news_block.findAll("li"):
+                title = row.find("a").text.strip()
+                print(post_dt, title)
+                if (
+                    "новости недели" in title
+                    or "наиболее важные новости недели" in title.lower()
+                ):
+                    continue
                 news = {
                     "uuid": str(uuid4()),
-                    "url": urljoin(self.base_url, link.get("href")),
-                    "title": link.text.strip(),
-                    "post_dttm": datetime.strptime(post_dttm, "%d, %B  %Y")
-                    if post_dttm
-                    else None,
+                    "url": urljoin(self.base_url, row.find("a").get("href").strip()),
+                    "title": title,
+                    "post_dttm": datetime.combine(
+                        post_dt,
+                        datetime.strptime(
+                            row.find("span", class_="time").text.strip(), "%H:%M"
+                        ).time(),
+                    ),
                     "processed_dttm": datetime.now(),
                 }
                 links.append(news)
-        next_page = soup.find("div", class_="pager").find("a", class_="next")
-        next_page = urljoin(self.base_url_news, next_page.get("href"))
-        return links, next_page
+        return links
 
-    def _get_page_urls(self, page: str) -> Tuple[List[dict], Optional[str]]:
+    def _get_page_urls(self, page: str) -> List[dict]:
+        page_raw = page
         try:
             page = self.session.get(
                 page, timeout=self.requests_timeout_sec, headers=self.headers
             )
             assert page.status_code == 200
-            soup = BeautifulSoup(page.text, "html.parser")
-            links, next_page = self._parse_main_page(soup)
+            soup = BeautifulSoup(page.content, "html.parser")
+            links = self._parse_main_page(soup)
             if not links:
                 logger.error(f"No available news for page: {page}")
-            return links, next_page
-        except requests.exceptions.Timeout as err:
-            logger.error(f"Timeout err: {err}")
+            return links
+        except requests.exceptions.ConnectTimeout as err:
+            logger.error(f"ConnectTimeout err: {err}")
         except requests.exceptions.RequestException as err:
             logger.error(f"RequestException err: {err}")
         except Exception as err:
             logger.error(f"Unexcepted err: {err}")
         self.failed_url.append(page)
-        return [], None
+        return []
 
     def _parse_news_page(self, page) -> Tuple[Optional[str], Optional[str]]:
+        page_raw = page
         try:
             page = self.session.get(
                 page, timeout=self.requests_timeout_sec, headers=self.headers
             )
             assert page.status_code == 200
-            soup = BeautifulSoup(page.text, "html.parser")
-            content = soup.find("div", class_="html")
+            soup = BeautifulSoup(page.content, "html.parser")
+            content = soup.find("div", class_="block-p-mb30")
             links = ",".join(
                 [link.get("href") for link in content.findAll("a") if link.get("href")]
             )
@@ -100,7 +115,7 @@ class NalogovedScraper:
         except requests.exceptions.RequestException as err:
             logger.error(f"RequestException err: {err}")
         except Exception as err:
-            logger.error(f"Unexcepted err: {err}")
+            logger.error(f"Unexcepted err: {str(err)}")
         self.failed_url.append(page)
         return None, None
 
@@ -126,48 +141,46 @@ class NalogovedScraper:
 
     def parse(
         self,
-        start_page: str = None,
+        start_page: int = None,
         stop_post_dttm: datetime = None,
-        stop_page_num: str = None,
+        stop_page_num: int = None,
     ) -> List[dict]:
         """
 
         Parameters
         ----------
-        start_page : str, optional
+        start_page : int, optional
             Страница, с которой начать парсинг
         stop_post_dttm : datetime, optional
             Последняя дата-время, после которой остановить парсинг
-        stop_page_num : str, optional
+        stop_page_num : int, optional
             Последняя страница, после которой остновать парсинг
 
         Returns
         -------
         Список из новостей
         """
-        page = start_page or self.base_url_news
+        page = start_page or 1
+        next_page = 0
         total_news_parsed = 0
         links = []
+        min_post_dttm = None
         while True:
-            links_, next_page = self._get_page_urls(page)
+            links_ = self._get_page_urls(self.news_pages_tpl.format(page))
             total_news_parsed += len(links_)
             links.extend(links_)
             if links:
+                sleep(randint(1, 5))
                 links, min_post_dttm = self._get_news_text(links)
-            if next_page is None:
-                logger.error(f"None next_page for page {page}")
-                self._save_batch(links, save_all=True)
-                return
+            next_page += start_page + 1
 
             logger.info(
                 f"current page {page} next_page {next_page} min_post_dttm {min_post_dttm} parse news {len(links)} total parsed {total_news_parsed}"
             )
 
-            if (stop_post_dttm and stop_post_dttm >= min_post_dttm) or (
-                stop_page_num
-                and next_page
-                and int(next_page.split("=")[1]) >= stop_page_num + 1
-            ):
+            if (
+                stop_post_dttm and min_post_dttm and stop_post_dttm >= min_post_dttm
+            ) or (stop_page_num and next_page >= stop_page_num + 1):
                 self._save_batch(links, save_all=True)
                 return
 
@@ -177,18 +190,14 @@ class NalogovedScraper:
 
 
 if __name__ == "__main__":
-    news = NalogovedScraper(
-        csv_path=Path("/Users/vgstrelnik/Desktop/projects/hakaton/nalogoved.csv"),
+    news = AuditItScraper(
+        csv_path=Path("/Users/vgstrelnik/Desktop/projects/hakaton/audit_it.csv"),
         batch_save=100,
+        sleep_sec=10,
     )
 
-    news.parse(
-        start_page="https://nalogoved.ru/news/?page=1",
-        # stop_page_num=1
-        stop_page_num=120
-        # stop_post_dttm=datetime.strptime("2022-09-26", "%Y-%m-%d"),
-    )
+    news.parse(start_page=1, stop_page_num=500)
     with open(
-        "/Users/vgstrelnik/Desktop/projects/hakaton/nalogoved_failed.json", "w"
+        "/Users/vgstrelnik/Desktop/projects/hakaton/audit_it_failed.json", "w"
     ) as f:
         json.dump(news.failed_url, f)
