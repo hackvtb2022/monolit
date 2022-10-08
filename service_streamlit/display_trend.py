@@ -1,14 +1,12 @@
-import json
 import streamlit as st
 
 from datetime import datetime
+from typing import Dict
 
 
-def display_trend(filename: str, trend: str):
-    with open(filename, "r") as file:
-        mock = json.load(file)
+def display_trend(data: Dict, trend: str):
     st.header(trend)
-    for item in mock["trands"]:
+    for item in data["trands"]:
         if item["trand_title"] == trend:
             news = item["news"]
             break
