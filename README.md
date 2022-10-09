@@ -2,6 +2,7 @@
 
 ##### Структура проекта:
 
+
 - docker - директория с докер образами для сервисов
 - service_aggregator - сервис, реализующего поиск трендов новостей по переданному корпусу текста
 - service_api - API сервис, ерализующий доступ к поиску трендов новостей
@@ -11,6 +12,7 @@
 
 
 ##### Локальный запуск API
+
 
 Необходимо скачать и бинарный файл обученных эмбеддингов на новостях - https://drive.google.com/u/0/uc?id=11K3T8uHspn7nK21m3be5hM6hYKl5igPC&export=download и положить его по пути `monolit/service_aggregator/models/ru_vectors_v3.bin`
 
@@ -25,11 +27,11 @@ docker compose up -d api
 - Swagger: `http://localhost:8000/docs`
 - Endpoint, реализующий поиск новостей: `http://localhost:8000/api/v1/trands/`
 
+
 Запуск пауков todo:
 ```bash
 docker compose up -d api
 ```
-
 
 ##### Зависимости:
 ```bash

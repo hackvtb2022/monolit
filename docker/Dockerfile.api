@@ -17,4 +17,6 @@ COPY ./service_aggregator $APP_HOME/service_aggregator
 COPY ./service_insights $APP_HOME/service_insights
 COPY ./service_api $APP_HOME/service_api
 
+EXPOSE 8000/TCP
+
 CMD ["uvicorn", "service_api.main:app", "--host", "0.0.0.0", "--port", "8000"]

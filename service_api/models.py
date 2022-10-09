@@ -5,6 +5,8 @@ from service_api.database import Base
 
 
 class NewsModel(Base):
+    """Таблица новостей"""
+
     __tablename__ = "news"
 
     uuid = Column(String, primary_key=True)
@@ -17,6 +19,8 @@ class NewsModel(Base):
 
 
 class NewsEmbModel(Base):
+    """Таблица эмбедингов новостей"""
+
     __tablename__ = "news_emb"
 
     uuid = Column(String, primary_key=True)
@@ -25,6 +29,8 @@ class NewsEmbModel(Base):
 
 
 class NewsRolesMapModel(Base):
+    """Таблица соответствия роли и новости"""
+
     __tablename__ = "news_roles_map"
 
     uuid = Column(String, primary_key=True)
@@ -32,6 +38,8 @@ class NewsRolesMapModel(Base):
 
 
 class RolesModel(Base):
+    """Таблица ролей"""
+
     __tablename__ = "roles"
 
     role_id = Column(String, primary_key=True)
