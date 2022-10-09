@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
 import locale
-from pytz import UTC
-from typing import Optional
-from loguru import logger
-from .base import BaseParser
 from dataclasses import asdict
+from datetime import datetime, timedelta
+from typing import Optional
 
+from loguru import logger
+from pytz import UTC
+
+from service_scraper.spiders.base import BaseParser
 
 
 class LentaParser(BaseParser):
@@ -26,10 +27,17 @@ class LentaParser(BaseParser):
         locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
         return datetime.strptime(date, "%H:%M, %d %B %Y").replace(tzinfo=UTC)
 
-    def parse(self, max_pages: int = None, start_page: int = 1, stop_datetime: Optional[datetime] = None):
+    def parse(
+        self,
+        max_pages: int = None,
+        start_page: int = 1,
+        stop_datetime: Optional[datetime] = None,
+    ):
         """Точка запуска парсера"""
         stop_datetime = stop_datetime.replace(tzinfo=UTC) if stop_datetime else None
-        assert stop_datetime is not None or max_pages is not None, "Нужно задать ограничения на парсинг"
+        assert (
+            stop_datetime is not None or max_pages is not None
+        ), "Нужно задать ограничения на парсинг"
 
         result = []
         previous_min_dt = None
@@ -66,8 +74,7 @@ if __name__ == "__main__":
     min_loaded_date = min([article["post_dttm"] for article in first_test])
     status = "✅" if min_loaded_date > last_bd_time else "❌"
     logger.info(f"Тест №1 - остановимся по времени : {status}")
-    
-    
+
     page_to_parse = 2
     _ = lenta_parser.parse(max_pages=page_to_parse)
     second_test = lenta_parser.page_parsed

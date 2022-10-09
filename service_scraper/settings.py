@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str
     POSTGRES_DB: str
     SPIDER_WAIT_TIMEOUT_SEC: int = 5
+    SPIDER_PERIOD_DAYS: int = 1
 
     @property
     def DB_SQLALCHEMY_DATABASE_URL(self):

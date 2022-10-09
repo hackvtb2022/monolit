@@ -1,20 +1,36 @@
 import time
+import traceback
 from datetime import datetime, timedelta
 from typing import List
+
+from loguru import logger
 
 from service_aggregator.embedder import get_embeddings_text
 from service_scraper.database import SessionManager
 from service_scraper.models import NewsEmbModel, NewsModel, NewsRolesMapModel
 from service_scraper.settings import APP_SETTINGS
-from service_scraper.spiders.parsers import parser_lenta_business
+from service_scraper.spiders import (
+    BuhgalteriaParser,
+    ExpertParser,
+    LentaParser,
+    NalogovedParser,
+)
 from service_scraper.upsert import upsert
-from service_scraper.utils import get_stream_logger
 
-logger = get_stream_logger(logger_name=__name__)
+ROLE_SOURCES = {
+    # "бухгалтер": [
+    #     # NalogovedParser("https://nalogoved.ru/news?page="),
+    #     BuhgalteriaParser("https://www.buhgalteria.ru/news/?PAGEN_1="),
+    # ],
+    "ген_директор": [
+        ExpertParser("https://expert.ru/ekonomika/"),
+        # LentaParser("https://lenta.ru/rubrics/economics/investments/"),
+    ]
+}
 
 
-def get_last_post_dttm() -> datetime:
-    return (datetime.now() - timedelta(days=1)).replace(
+def get_last_post_dttm(period_days: int) -> datetime:
+    return (datetime.now() - timedelta(days=period_days)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
 
@@ -32,15 +48,13 @@ def put_news(news: List[dict]):
                 title=row["title"],
                 post_dttm=row["post_dttm"],
                 url=row["url"],
-                text_links=row["text_links"],
+                text_links=row.get("text_links"),
                 processed_dttm=processed_dttm,
             )
         )
-        news_roles_models.append(
-            NewsRolesMapModel(uuid=row["uuid"], role_id=row["role_id"])
-        )
+        news_roles_models.append(dict(uuid=row["uuid"], role_id=row["role_id"]))
         news_emd_models.append(
-            NewsEmbModel(
+            dict(
                 uuid=row["uuid"],
                 embedding_full_text=row["embedding_full_text"],
                 embedding_title=row["embedding_title"],
@@ -53,12 +67,21 @@ def put_news(news: List[dict]):
             NewsModel,
             news_models,
             as_of_date_col="processed_dttm",
-            no_update_cols=[],
         )
         logger.info("put NewsRolesMapModel")
-        db.bulk_save_objects(news_roles_models)
+        # db.bulk_save_objects(news_roles_models)
+        upsert(
+            db,
+            NewsRolesMapModel,
+            news_roles_models,
+        )
         logger.info("put NewsEmbModel")
-        db.bulk_save_objects(news_emd_models)
+        # db.bulk_save_objects(news_emd_models)
+        upsert(
+            db,
+            NewsEmbModel,
+            news_emd_models,
+        )
 
 
 def add_emb(role_id: str, news: List[dict]) -> List[dict]:
@@ -69,25 +92,23 @@ def add_emb(role_id: str, news: List[dict]) -> List[dict]:
     return news
 
 
-def get_news(parser, last_post_dttm) -> List[dict]:
-    return parser.parse_website(max_pages=2, stop_datetime=last_post_dttm)
-
-
 def run_spider():
-    role_id = "ген_директор"
-    parser = parser_lenta_business
     while True:
-        try:
-            last_post_dttm = get_last_post_dttm()
-            logger.info("get_news")
-            news = get_news(parser, last_post_dttm)
-            if news:
-                logger.info("add_emb")
-                news = add_emb(role_id, news)
-                logger.info("put_news")
-                put_news(news)
-        except Exception as err:
-            logger.info(f"Unexcepted error: {err}")
+        last_post_dttm = get_last_post_dttm(APP_SETTINGS.SPIDER_PERIOD_DAYS)
+        for role_id in ROLE_SOURCES:
+            for parser in ROLE_SOURCES[role_id]:
+                logger.info(f"Start {role_id} {parser.pages_url}")
+                try:
+                    news = parser.parse(stop_datetime=last_post_dttm)
+                    if news:
+                        news = add_emb(role_id, news)
+                        put_news(news)
+                        logger.info(f"Done {role_id} {parser.pages_url}")
+                    else:
+                        logger.error(f"No news for {role_id} {parser.pages_url}")
+                except Exception as err:
+                    trace = traceback.format_exc()
+                    logger.error(f"Unexpected exception {err} trace {trace}")
         logger.info("sleep")
         time.sleep(APP_SETTINGS.SPIDER_WAIT_TIMEOUT_SEC)
 

@@ -1,9 +1,10 @@
 import locale
 from datetime import datetime, timedelta
 
-from base import BaseParser
 from loguru import logger
 from pytz import UTC
+
+from service_scraper.spiders.base import BaseParser
 
 
 class NalogovedParser(BaseParser):

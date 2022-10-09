@@ -1,8 +1,10 @@
+import locale
+from datetime import datetime, timedelta
+
 from loguru import logger
 from pytz import UTC
-from base import BaseParser
-from datetime import datetime, timedelta
-import locale
+
+from service_scraper.spiders.base import BaseParser
 
 
 class ExpertParser(BaseParser):
