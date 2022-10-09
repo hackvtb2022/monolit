@@ -1,4 +1,6 @@
-# monolit
+# Monolit
+
+![alt text](logo.png "Logo")
 
 ##### Структура проекта:
 
