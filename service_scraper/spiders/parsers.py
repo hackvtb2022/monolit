@@ -1,7 +1,11 @@
+import os
+import time
 from datetime import datetime, timedelta
+from random import randint
 from typing import Callable, Optional
 from uuid import uuid4
 
+import pandas as pd
 import pytz
 import requests
 from bs4 import BeautifulSoup
@@ -129,17 +133,24 @@ class BaseParser:
         max_pages,
         stop_datetime: Optional[datetime] = None,
     ):
+        batch = 100
+        total = 0
         stop_datetime = stop_datetime.replace(tzinfo=utc) if stop_datetime else None
         result = list()
         for page in range(self.start_page, max_pages + 1):
             url = self.pages_url + str(page)
             response = self._do_request(url, headers=self.headers)
+            print("page", page, url)
 
             # получаем страницу
             tree = BeautifulSoup(response.content, "html.parser")
 
             # находим блок со всеми новостями
             articles = tree.find(self.articles_block, self.articles_attr)
+
+            if not articles:
+                print("ARTICLES NOT FOUND")
+                continue
 
             # находим каждый блок новости
             articles = articles.find_all(self.article_block, self.article_attr)
@@ -159,9 +170,12 @@ class BaseParser:
                 response = self._do_request(news_url, headers=self.headers)
                 tree = BeautifulSoup(response.content, "html.parser")
 
-                post_date = self.date_parser(
-                    tree.find(self.date_block, self.date_attr).text
-                ).replace(tzinfo=utc)
+                for dt in tree.findAll(self.date_block, self.date_attr):
+                    try:
+                        post_date = self.date_parser(dt.text).replace(tzinfo=utc)
+                        break
+                    except:
+                        pass
                 # ограничение по временным рамкам парсинга
                 if stop_datetime and post_date < stop_datetime:
                     break
@@ -171,6 +185,9 @@ class BaseParser:
                 print(title)
 
                 content = tree.find(self.text_block, self.text_attr)
+                if not content:
+                    print("CONTENT NOT FOUND")
+                    continue
                 full_text = content.text
                 full_text = " ".join(full_text.split())
                 full_text = full_text.replace("\n", " ")
@@ -185,87 +202,137 @@ class BaseParser:
                     "full_text": full_text,
                     "post_dttm": post_date,
                     "processed_dttm": proc_date,
+                    "text_links": None,
                 }
                 result.append(news)
+                total += 1
 
+                if len(result) >= 10:
+                    print("SAVE batch 100, total", total)
+                    self._save_csv("./new_site.csv", result)
+                    del result
+                    result = []
+                    print("sleep batch")
+                    time.sleep(3 + randint(1, 5))
+        if result:
+            print("SAVE batch 100 last, total", total)
+            self._save_csv("./new_site.csv", result)
         return result
+
+    def _save_csv(self, path_, data):
+        df = pd.DataFrame(data)
+        df.to_csv(path_, sep=";", mode="a", header=not os.path.exists(path_))
 
     def _do_request(self, url, headers):
         retries = 0
         while retries < 5:
             try:
                 response = self.session.get(url, headers=headers)
-            except Exception:
-                self.sleep()
+                assert response.status_code == 200
+            except:
+                print("sleep do request")
+                time.sleep(3 + randint(1, 5))
                 retries += 1
             else:
                 return response
         raise Exception("WTF, can't connect")
 
 
-if __name__ == "__main__":
-    url = "https://www.buhgalteria.ru/news/?PAGEN_1="
+import locale
+from datetime import datetime, timedelta
 
-    # parser_bugalteria = BaseParser(
-    #     header=d,
-    #     pages_url=url,
-    #     date_parser=date_parse,
-    #     articles_block="div",
-    #     articles_attr={"class": "articles"},
-    #     article_block="article",
-    #     article_attr=None,
-    #     url_block="h3",
-    #     url_attr=None,
-    #     title_block="h1",
-    #     title_attr=None,
-    #     text_block="div",
-    #     text_attr={"class": "text"},
-    #     date_block="span",
-    #     date_attr={"class": "newsdate"},
-    # )
+from dateutil.parser import parse
 
-    # print(parser_bugalteria.parse_website(max_pages=5))
+locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
 
-    # parser_nalogoved = BaseParser(
-    #     header=d,
-    #     pages_url=url_2,
-    #     date_parser=date_parse_nalogoved,
-    #     articles_block="div",
-    #     articles_attr={"class": "pubs-list"},
-    #     article_block="div",
-    #     article_attr={"class": "news-list"},
-    #     url_block=None,
-    #     url_attr=None,
-    #     title_block="h1",
-    #     title_attr=None,
-    #     text_block="div",
-    #     text_attr={"class": "html"},
-    #     date_block="div",
-    #     date_attr={"class": "date"},
-    # )
 
-    # print(
-    #     parser_nalogoved.parse_website(
-    #         max_pages=5, stop_datetime=datetime.now() - timedelta(days=2)
-    #     )
-    # )
+def parse_dt(dt):
+    """
+    6 октября 2022, 15:47
+    """
+    return datetime.strptime(dt, "%d %B %Y, %H:%M")
 
-    parser_lenta_business = BaseParser(
-        header=d,
-        pages_url="https://lenta.ru/rubrics/economics/markets/",
-        date_parser=date_parse_lenta,
-        articles_block="div",
-        articles_attr={"class": "rubric-page"},
-        article_block="li",
-        article_attr={"class": "rubric-page__item _news"},
-        url_block=None,
-        url_attr=None,
-        title_block="span",
-        title_attr={"class": "topic-body__title"},
-        date_block="time",
-        date_attr={"class": "topic-header__time"},
-        text_block="div",
-        text_attr={"class": "topic-body__content"},
-    )
 
-    print(parser_lenta_business.parse_website(max_pages=2))
+parser_lenta_business = BaseParser(
+    header=d,
+    pages_url="https://expert.ru/ekonomika/",
+    date_parser=parse_dt,
+    articles_block="div",
+    articles_attr={"class": "modular-grid"},
+    article_block="article",
+    article_attr=None,
+    url_block="h2",
+    url_attr=None,
+    title_block="h1",
+    title_attr=None,
+    date_block="span",
+    date_attr={"class": "description"},
+    text_block="div",
+    text_attr={"class": "content-text"},
+)
+
+# print()
+
+# parser_bugalteria = BaseParser(
+#     header=d,
+#     pages_url=url,
+#     date_parser=date_parse,
+#     articles_block="div",
+#     articles_attr={"class": "articles"},
+#     article_block="article",
+#     article_attr=None,
+#     url_block="h3",
+#     url_attr=None,
+#     title_block="h1",
+#     title_attr=None,
+#     text_block="div",
+#     text_attr={"class": "text"},
+#     date_block="span",
+#     date_attr={"class": "newsdate"},
+# )
+
+# print(parser_bugalteria.parse_website(max_pages=5))
+
+# parser_nalogoved = BaseParser(
+#     header=d,
+#     pages_url=url_2,
+#     date_parser=date_parse_nalogoved,
+#     articles_block="div",
+#     articles_attr={"class": "pubs-list"},
+#     article_block="div",
+#     article_attr={"class": "news-list"},
+#     url_block=None,
+#     url_attr=None,
+#     title_block="h1",
+#     title_attr=None,
+#     text_block="div",
+#     text_attr={"class": "html"},
+#     date_block="div",
+#     date_attr={"class": "date"},
+# )
+
+# print(
+#     parser_nalogoved.parse_website(
+#         max_pages=5, stop_datetime=datetime.now() - timedelta(days=2)
+#     )
+# )
+
+# parser_lenta_business = BaseParser(
+#     header=d,
+#     pages_url="https://lenta.ru/rubrics/economics/markets/",
+#     date_parser=date_parse_lenta,
+#     articles_block="div",
+#     articles_attr={"class": "rubric-page"},
+#     article_block="li",
+#     article_attr={"class": "rubric-page__item _news"},
+#     url_block=None,
+#     url_attr=None,
+#     title_block="span",
+#     title_attr={"class": "topic-body__title"},
+#     date_block="time",
+#     date_attr={"class": "topic-header__time"},
+#     text_block="div",
+#     text_attr={"class": "topic-body__content"},
+# )
+
+# print(parser_lenta_business.parse_website(max_pages=2))
