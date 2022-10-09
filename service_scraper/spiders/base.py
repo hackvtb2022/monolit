@@ -1,16 +1,16 @@
-from datetime import datetime
-from requests import Response, Session
-from abc import ABC, abstractstaticmethod
-from dataclasses import dataclass, asdict
-from pytz import UTC
-from uuid import uuid4
-from typing import List, Optional
-from bs4 import BeautifulSoup
-from requests.compat import urljoin
-from datetime import datetime
 import random
 import time
+from abc import ABC, abstractstaticmethod
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import List, Optional
+from uuid import uuid4
+
+from bs4 import BeautifulSoup
 from loguru import logger
+from pytz import UTC
+from requests import Response, Session
+from requests.compat import urljoin
 from tqdm import tqdm
 
 
@@ -76,16 +76,16 @@ class BaseParser(ABC):
             response = self._do_request(url, attempt + 1)
         return response
 
-
-    def _parse_page(self, page_number: int, stop_datetime: Optional[datetime] = None) -> List[News]:
+    def _parse_page(
+        self, page_number: int, stop_datetime: Optional[datetime] = None
+    ) -> List[News]:
         """Парсим HTML-страницу с лентой, собираем ссылки на новости"""
         response = self._do_request(self.pages_url + str(page_number))
         # получаем страницу
         tree = BeautifulSoup(response.content, "html.parser")
         # находим блок со всеми новостями и в нем уже каждый блок новости
-        articles = (
-            tree.find(self.ARTICLES_BLOCK, self.ARTICLES_ATTR)
-            .find_all(self.ARTICLE_BLOCK, self.ARTICLE_ATTR)
+        articles = tree.find(self.ARTICLES_BLOCK, self.ARTICLES_ATTR).find_all(
+            self.ARTICLE_BLOCK, self.ARTICLE_ATTR
         )
         if self.URL_BLOCK:
             articles_urls = [
@@ -105,8 +105,9 @@ class BaseParser(ABC):
                 return data, True
         return data, False
 
-    
-    def _parse_article(self, article_url: str, stop_datetime: Optional[datetime] = None) -> News:
+    def _parse_article(
+        self, article_url: str, stop_datetime: Optional[datetime] = None
+    ) -> News:
         """Парсим HTML-страницу с новостью"""
         news_url = urljoin(self.pages_url, article_url)
         response = self._do_request(news_url)
@@ -117,9 +118,10 @@ class BaseParser(ABC):
                 post_date = self._parse_date(raw_date.text)
                 break
             except:
-                pass
+                post_date = None
+
         # ограничение по временным рамкам парсинга
-        if stop_datetime and post_date < stop_datetime:
+        if stop_datetime and post_date and (post_date < stop_datetime):
             raise StopIteration
 
         title = tree.find(self.TITLE_BLOCK, self.TITLE_ATTR).text
@@ -133,10 +135,17 @@ class BaseParser(ABC):
         )
         return News(news_url, title, full_text, post_date, self.source)
 
-    def parse(self, max_pages: int = None, start_page: int = 1, stop_datetime: Optional[datetime] = None):
+    def parse(
+        self,
+        max_pages: int = None,
+        start_page: int = 1,
+        stop_datetime: Optional[datetime] = None,
+    ):
         """Точка запуска парсера"""
         stop_datetime = stop_datetime.replace(tzinfo=UTC) if stop_datetime else None
-        assert stop_datetime is not None or max_pages is not None, "Нужно задать ограничения на парсинг"
+        assert (
+            stop_datetime is not None or max_pages is not None
+        ), "Нужно задать ограничения на парсинг"
 
         result = []
         self.page_parsed = 0

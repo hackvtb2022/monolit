@@ -1,12 +1,22 @@
-FROM python:3.9-slim
+FROM python:3.9
 
 ENV APP_HOME=/app
 
 WORKDIR $APP_HOME
 
+RUN apt-get update
+
 COPY requirements_scraper.txt .
 RUN pip install --no-cache-dir -r requirements_scraper.txt
 
-COPY ./service_scraper $APP_HOME
+RUN python -m spacy download ru_core_news_sm
+RUN python -m dostoevsky download fasttext-social-network-model
 
-CMD ["python", "/app/hello.py"]
+COPY ./service_filterer $APP_HOME/service_filterer
+COPY ./service_aggregator $APP_HOME/service_aggregator
+COPY ./service_scraper $APP_HOME/service_scraper
+ADD ./resources $APP_HOME/resources
+
+ENV PYTHONPATH=${PYTHONPATH}:$PWD
+
+CMD ["python", "service_scraper/main.py"]

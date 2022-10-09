@@ -7,6 +7,6 @@ WORKDIR $APP_HOME
 COPY requirements_aggregator.txt .
 RUN pip install --no-cache-dir -r requirements_aggregator.txt
 
-COPY ./service_aggregator $APP_HOME
+COPY ./service_aggregator $APP_HOME/service_aggregator
 
-CMD ["python", "/app/hello.py"]
+CMD ["python", "service_aggregator/hello.py"]

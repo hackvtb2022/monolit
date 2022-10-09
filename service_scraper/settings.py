@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: SecretStr
     POSTGRES_HOST: str
     POSTGRES_DB: str
-    SPIDER_WAIT_TIMEOUT_SEC: int = 5
+    SPIDER_WAIT_TIMEOUT_SEC: int = 60 * 60 * 1  # каждый час
     SPIDER_PERIOD_DAYS: int = 1
 
     @property

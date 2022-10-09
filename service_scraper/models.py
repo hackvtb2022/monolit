@@ -1,13 +1,13 @@
 from sqlalchemy import ARRAY, TIMESTAMP, Column, Float, String
 from sqlalchemy.ext.mutable import MutableList
 
-from service_api.database import Base
+from service_scraper.database import Base
 
 
 class NewsModel(Base):
     """Таблица новостей"""
 
-    __tablename__ = "news_tmp1"
+    __tablename__ = "news"
 
     uuid = Column(String)
     full_text = Column(String)
@@ -21,7 +21,7 @@ class NewsModel(Base):
 class NewsEmbModel(Base):
     """Таблица эмбедингов новостей"""
 
-    __tablename__ = "news_emb_tmp1"
+    __tablename__ = "news_emb"
 
     uuid = Column(String, primary_key=True)
     embedding_full_text = Column(MutableList.as_mutable(ARRAY(Float)))
@@ -31,7 +31,7 @@ class NewsEmbModel(Base):
 class NewsRolesMapModel(Base):
     """Таблица соответствия роли и новости"""
 
-    __tablename__ = "news_roles_map_tmp1"
+    __tablename__ = "news_roles_map"
 
     uuid = Column(String, primary_key=True)
     role_id = Column(String, primary_key=True)

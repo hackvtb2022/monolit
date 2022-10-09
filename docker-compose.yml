@@ -25,10 +25,10 @@ services:
       context: .
       dockerfile: docker/Dockerfile.scraper
     volumes:
-    - ./service_scraper:/app/app
+    - ./service_scraper:/app/service_scraper
+    - ./service_aggregator:/app/service_aggregator
+    - ./service_filterer:/app/service_filterer
     env_file: docker/.env.local
-    depends_on:
-    - db
   aggregator:
     build:
       context: .

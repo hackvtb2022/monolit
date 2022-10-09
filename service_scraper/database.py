@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
-from service_api.settings import APP_SETTINGS
+from service_scraper.settings import APP_SETTINGS
 
 engine = create_engine(APP_SETTINGS.DB_SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
